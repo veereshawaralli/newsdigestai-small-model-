@@ -5,4 +5,5 @@ transformers
 sentencepiece
 newspaper3k
 lxml_html_clean
-torch==2.2.2+cpu
+torch==2.5.1
+
