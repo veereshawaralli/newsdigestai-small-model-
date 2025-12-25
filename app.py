@@ -1,43 +1,45 @@
-
-from flask import Flask, render_template, request
-from transformers import pipeline
+from flask import Flask, render_template, request, jsonify
 from newspaper import Article
-import re
+import requests
+import os
 
 app = Flask(__name__)
 
-summarizer = pipeline("summarization", model="t5-small")
+# 🔐 Hugging Face API
+HF_API_URL = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
-def is_url(text):
-    return re.match(r'https?://\S+', text)
+HEADERS = {
+    "Authorization": f"Bearer {HF_TOKEN}"
+}
 
-def extract_article_from_url(url):
-    article = Article(url)
-    article.download()
-    article.parse()
-    return article.text
+def summarize_text(text):
+    payload = {"inputs": text}
+    response = requests.post(HF_API_URL, headers=HEADERS, json=payload)
+    result = response.json()
 
-@app.route("/", methods=["GET", "POST"])
+    if isinstance(result, list):
+        return result[0]["summary_text"]
+    else:
+        return "Error generating summary"
+
+@app.route("/")
 def index():
-    summary_text = ""
-    if request.method == "POST":
-        user_input = request.form["text"]
+    return render_template("index.html")
 
-        if is_url(user_input):
-            text = extract_article_from_url(user_input)
-        else:
-            text = user_input
+@app.route("/summarize", methods=["POST"])
+def summarize():
+    data = request.json
+    text = data.get("text", "").strip()
 
-        summary = summarizer(
-            "summarize: " + text,
-            max_length=150,
-            min_length=50,
-            do_sample=False
-        )
+    if text.startswith("http"):
+        article = Article(text)
+        article.download()
+        article.parse()
+        text = article.text
 
-        summary_text = summary[0]["summary_text"]
-
-    return render_template("index.html", summary=summary_text)
+    summary = summarize_text(text)
+    return jsonify({"summary": summary})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run()
