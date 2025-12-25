@@ -1,9 +1,5 @@
-
 flask
-gunicorn
-transformers
-sentencepiece
+requests
 newspaper3k
 lxml_html_clean
-torch==2.5.1
-
+gunicorn
