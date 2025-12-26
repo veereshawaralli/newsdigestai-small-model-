@@ -2,4 +2,3 @@ flask
 requests
 newspaper3k
 lxml_html_clean
-gunicorn
