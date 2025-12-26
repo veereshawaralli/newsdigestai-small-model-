@@ -1,45 +1,44 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 from newspaper import Article
-import requests
-import os
+from transformers import pipeline
 
 app = Flask(__name__)
 
-# 🔐 Hugging Face API
-HF_API_URL = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"
-HF_TOKEN = os.environ.get("HF_TOKEN")
+# Load summarizer (lightweight)
+summarizer = pipeline(
+    "summarization",
+    model="facebook/bart-large-cnn",
+    device=-1   # CPU only
+)
 
-HEADERS = {
-    "Authorization": f"Bearer {HF_TOKEN}"
-}
-
-def summarize_text(text):
-    payload = {"inputs": text}
-    response = requests.post(HF_API_URL, headers=HEADERS, json=payload)
-    result = response.json()
-
-    if isinstance(result, list):
-        return result[0]["summary_text"]
-    else:
-        return "Error generating summary"
-
-@app.route("/")
-def index():
+@app.route("/", methods=["GET"])
+def home():
     return render_template("index.html")
 
 @app.route("/summarize", methods=["POST"])
 def summarize():
-    data = request.json
-    text = data.get("text", "").strip()
+    article_input = request.form.get("article")
 
-    if text.startswith("http"):
-        article = Article(text)
+    if article_input.startswith("http"):
+        article = Article(article_input)
         article.download()
         article.parse()
         text = article.text
+    else:
+        text = article_input
 
-    summary = summarize_text(text)
-    return jsonify({"summary": summary})
+    summary = summarizer(
+        text,
+        max_length=150,
+        min_length=60,
+        do_sample=False
+    )[0]["summary_text"]
+
+    return render_template(
+        "index.html",
+        summary=summary,
+        article=article_input
+    )
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
