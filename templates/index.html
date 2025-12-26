@@ -1,16 +1,44 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>NewsDigest AI</title>
-<link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <title>NewsDigest AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<h1>NewsDigest AI</h1>
-<form method="POST">
-<textarea name="text" required></textarea>
-<button type="submit">Summarize</button>
-</form>
-{% if summary %}<p>{{ summary }}</p>{% endif %}
+
+<div class="background"></div>
+
+<div class="container">
+    <h1>📰 NewsDigest AI</h1>
+    <p class="subtitle">Smart News Summarization using AI</p>
+
+    <form action="/summarize" method="POST" onsubmit="showLoader()">
+        <textarea 
+            name="text" 
+            placeholder="Paste news article text or URL here..."
+            required></textarea>
+
+        <button type="submit">✨ Summarize</button>
+    </form>
+
+    {% if summary %}
+    <div class="result">
+        <h2>Summary</h2>
+        <p>{{ summary }}</p>
+    </div>
+    {% endif %}
+
+    <div id="loader" class="loader hidden">
+        ⏳ Processing...
+    </div>
+
+    <footer>
+        © 2025 NewsDigest AI
+    </footer>
+</div>
+
+<script src="/static/script.js"></script>
 </body>
 </html>
